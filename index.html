@@ -769,38 +769,9 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Функция получения ответа через OpenAI API
-async function getResponse(question) {
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer sk-proj-ТВОЙ_КЛЮЧ_СЮДА'  // ← И ЗДЕСЬ!
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Ты Mingar - наставник по бизнесу с IQ 180+. Даёшь практичные советы.'
-                    },
-                    {
-                        role: 'user',
-                        content: question
-                    }
-                ],
-                max_tokens: 500
-            })
-        });
-
-        const data = await response.json();
-        return data.choices[0].message.content;
-        
-    } catch (error) {
-        return 'Ошибка API. Проверьте ключ.';
-    }
-}
+        // Функция получения ответа (mock)
+        function getResponse(question) {
+            const normalizedQuestion = question.toLowerCase().trim();
             
             // Ищем соответствие в mock-ответах
             for (const [key, value] of Object.entries(mockResponses)) {
@@ -814,24 +785,24 @@ async function getResponse(question) {
         }
 
         // Обработка отправки формы
-chatForm.addEventListener('submit', async (e) => {  // ← добавь async
-    e.preventDefault();
-    
-    const question = userInput.value.trim();
-    if (!question) return;
-    
-    addMessage(question, true);
-    userInput.value = '';
-    
-    addMessage('Думаю...', false);
-    
-    const response = await getResponse(question);  // ← добавь await
-    
-    const messages = messagesContainer.children;
-    messagesContainer.removeChild(messages[messages.length - 1]);
-    
-    addMessage(response, false);
-});
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const question = userInput.value.trim();
+            if (!question) return;
+            
+            // Добавляем вопрос пользователя
+            addMessage(question, true);
+            
+            // Очищаем поле ввода
+            userInput.value = '';
+            
+            // Имитация задержки ответа (как будто AI думает)
+            setTimeout(() => {
+                const response = getResponse(question);
+                addMessage(response, false);
+            }, 500);
+        });
 
         // Функция для примеров вопросов
         function askExample(question) {
@@ -841,54 +812,24 @@ chatForm.addEventListener('submit', async (e) => {  // ← добавь async
             chatForm.dispatchEvent(new Event('submit'));
         }
 
-        // Генератор бизнес-идей через OpenAI API
-async function generateIdea() {
-    addMessage("Сгенерируй мне бизнес-идею", true);
-    addMessage("Генерирую уникальную бизнес-идею...", false);
-    
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer sk-proj-ТВОЙ_КЛЮЧ_СЮДА'  // ← ВОТ ЗДЕСЬ!
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Ты эксперт по генерации бизнес-идей.'
+        // Генератор бизнес-идей через API
+        async function generateIdea() {
+            // Добавляем запрос в чат
+            addMessage("Сгенерируй мне бизнес-идею", true);
+            
+            // Показываем индикатор загрузки
+            const loadingMessage = "Генерирую уникальную бизнес-идею...";
+            addMessage(loadingMessage, false);
+            
+            try {
+                // Вызываем Claude API для генерации идеи
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
                     },
-                    {
-                        role: 'user',
-                        content: 'Сгенерируй одну конкретную бизнес-идею. Опиши кратко (2-4 предложения): что это, для кого, как монетизировать. Начни с эмодзи.'
-                    }
-                ],
-                max_tokens: 300
-            })
-        });
-
-        const data = await response.json();
-        
-        const messages = messagesContainer.children;
-        messagesContainer.removeChild(messages[messages.length - 1]);
-        
-        if (data.error) {
-            addMessage('Ошибка: ' + data.error.message, false);
-            return;
-        }
-        
-        const ideaText = data.choices[0].message.content;
-        addMessage(ideaText, false);
-        
-    } catch (error) {
-        const messages = messagesContainer.children;
-        messagesContainer.removeChild(messages[messages.length - 1]);
-        addMessage("Произошла ошибка. Проверьте API ключ.", false);
-        console.error("Ошибка API:", error);
-    }
-}
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
                         max_tokens: 1000,
                         messages: [
                             { 
